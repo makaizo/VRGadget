@@ -1,15 +1,13 @@
 #include "MQTTClient.h"
 #include "CommandsHandler.h"
+#include "CredentialHandler.h"
 #include <WiFi.h>
 #include <M5Atom.h>
 #include <memory>
 
 std::unique_ptr<CommandsHandler> commands_handler;
 std::unique_ptr<MQTTClient> mqtt_client;
-
-// WiFi credentials - update these with your network details
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+Credentials credentials;
 
 void call_command(const std::string& command) {
     if (!commands_handler) {
@@ -54,8 +52,14 @@ void notify(const std::string& command) {
 }
 
 void initialize_wifi() {
-    Serial.print("Connecting to WiFi");
-    WiFi.begin(ssid, password);
+    if (credentials.wifi_ssid.empty() || credentials.wifi_password.empty()) {
+        Serial.println("WiFi credentials not loaded!");
+        return;
+    }
+    
+    Serial.print("Connecting to WiFi: ");
+    Serial.println(credentials.wifi_ssid.c_str());
+    WiFi.begin(credentials.wifi_ssid.c_str(), credentials.wifi_password.c_str());
     
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
@@ -82,12 +86,28 @@ void setup() {
     Serial.begin(115200);
     Serial.println("Start main");
     
+    // Load credentials from JSON file
+    Serial.println("Loading credentials...");
+    credentials = CredentialHandler::read_credentials("/credentials.json");
+    
+    if (credentials.mqtt_token.empty()) {
+        Serial.println("Warning: MQTT token not loaded");
+    } else {
+        Serial.println("MQTT token loaded successfully");
+    }
+    
+    if (credentials.wifi_ssid.empty()) {
+        Serial.println("Warning: WiFi SSID not loaded");
+    } else {
+        Serial.print("WiFi SSID loaded: ");
+        Serial.println(credentials.wifi_ssid.c_str());
+    }
+    
     // Initialize WiFi
     initialize_wifi();
     
     // Initialize MQTT
-    std::string mqtt_token = "";
-    initialize_mqtt(mqtt_token);
+    initialize_mqtt(credentials.mqtt_token);
     
     // Initialize Commands handler
     commands_handler.reset(new CommandsHandler());
