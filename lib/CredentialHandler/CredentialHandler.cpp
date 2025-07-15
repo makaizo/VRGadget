@@ -9,14 +9,14 @@ Credentials CredentialHandler::read_credentials(const std::string& file_path) {
     
     // Initialize SPIFFS if not already initialized
     if (!SPIFFS.begin(true)) {
-        Serial.println("Failed to mount SPIFFS");
+        Serial.println("[Error] Failed to mount SPIFFS");
         return creds;
     }
     
     // Open file for reading
     File file = SPIFFS.open(file_path.c_str(), "r");
     if (!file) {
-        Serial.println("Failed to open credentials file");
+        Serial.println("[Error] Failed to open credentials file");
         return creds;
     }
     
@@ -29,19 +29,19 @@ Credentials CredentialHandler::read_credentials(const std::string& file_path) {
     DeserializationError error = deserializeJson(doc, fileContent);
     
     if (error) {
-        Serial.print("Failed to parse JSON: ");
+        Serial.print("[Error] Failed to parse JSON: ");
         Serial.println(error.c_str());
         return creds;
     }
     
     // Extract credentials
-    if (doc.containsKey("beebotteToken")) {
+    if (doc["beebotteToken"].is<String>()) {
         creds.mqtt_token = doc["beebotteToken"].as<String>().c_str();
     }
-    if (doc.containsKey("WifiSSID")) {
+    if (doc["WifiSSID"].is<String>()) {
         creds.wifi_ssid = doc["WifiSSID"].as<String>().c_str();
     }
-    if (doc.containsKey("WifiPassword")) {
+    if (doc["WifiPassword"].is<String>()) {
         creds.wifi_password = doc["WifiPassword"].as<String>().c_str();
     }
     

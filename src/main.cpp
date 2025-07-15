@@ -11,38 +11,38 @@ Credentials credentials;
 
 void call_command(const std::string& command) {
     if (!commands_handler) {
-        Serial.println("Commands handler not initialized");
+        Serial.println("[Error] Commands handler not initialized");
         return;
     }
-    Serial.print("Handling command: ");
+    Serial.print("[Info] Handling command: ");
     Serial.println(command.c_str());
     
     if (command == "start_heating") {
-        Serial.println("start_heating command");
+        Serial.println("[Info] start_heating command");
         commands_handler->start_heating();
     }
     else if (command == "finish_heating") {
-        Serial.println("finish_heating command");
+        Serial.println("[Info] finish_heating command");
         commands_handler->finish_heating();
     }
     else if (command == "start_cooling") {
-        Serial.println("start_cooling command");
+        Serial.println("[Info] start_cooling command");
         commands_handler->start_cooling();
     }
     else if (command == "finish_cooling") {
-        Serial.println("finish_cooling command");
+        Serial.println("[Info] finish_cooling command");
         commands_handler->finish_cooling();
     }
     else if (command == "start_splash") {
-        Serial.println("start_splash command");
+        Serial.println("[Info] start_splash command");
         commands_handler->start_splash();
     }
     else if (command == "finish_splash") {
-        Serial.println("finish_splash command");
+        Serial.println("[Info] finish_splash command");
         commands_handler->finish_splash();
     }
     else {
-        Serial.print("Unknown command: ");
+        Serial.print("[Error] Unknown command: ");
         Serial.println(command.c_str());
     }
 }
@@ -53,11 +53,11 @@ void notify(const std::string& command) {
 
 void initialize_wifi() {
     if (credentials.wifi_ssid.empty() || credentials.wifi_password.empty()) {
-        Serial.println("WiFi credentials not loaded!");
+        Serial.println("[Error] WiFi credentials not loaded!");
         return;
     }
     
-    Serial.print("Connecting to WiFi: ");
+    Serial.print("[Info] Connecting to WiFi: ");
     Serial.println(credentials.wifi_ssid.c_str());
     WiFi.begin(credentials.wifi_ssid.c_str(), credentials.wifi_password.c_str());
     
@@ -67,13 +67,13 @@ void initialize_wifi() {
     }
     
     Serial.println();
-    Serial.println("WiFi connected!");
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
+    Serial.println("[Info] WiFi connected!");
+    // Serial.print("[Info] IP address: ");
+    // Serial.println(WiFi.localIP());
 }
 
 void initialize_mqtt(const std::string& mqtt_token) {
-    mqtt_client.reset(new MQTTClient(mqtt_token, "LC500/command"));
+    mqtt_client.reset(new MQTTClient(mqtt_token, "VRGadget/command"));
     mqtt_client->subscribe(notify);
     mqtt_client->start();
 }
@@ -84,35 +84,29 @@ void setup() {
     
     // Initialize Serial
     Serial.begin(115200);
-    Serial.println("Start main");
+    Serial.println("[Info] Start main");
     
-    // Load credentials from JSON file
-    Serial.println("Loading credentials...");
+    Serial.println("[Info] Load credentials");
     credentials = CredentialHandler::read_credentials("/credentials.json");
-    
     if (credentials.mqtt_token.empty()) {
-        Serial.println("Warning: MQTT token not loaded");
-    } else {
-        Serial.println("MQTT token loaded successfully");
+        Serial.println("[Error] MQTT token not loaded");
+        Serial.println("[Fatal] Cannot continue without MQTT token. Halting.");
+        while(true) {
+            delay(1000); // Infinite loop to halt execution
+        }
     }
-    
     if (credentials.wifi_ssid.empty()) {
-        Serial.println("Warning: WiFi SSID not loaded");
-    } else {
-        Serial.print("WiFi SSID loaded: ");
-        Serial.println(credentials.wifi_ssid.c_str());
+        Serial.println("[Error] WiFi SSID not loaded");
+        Serial.println("[Fatal] Cannot continue without WiFi credentials. Halting.");
+        while(true) {
+            delay(1000); // Infinite loop to halt execution
+        }
     }
-    
-    // Initialize WiFi
+
     initialize_wifi();
-    
-    // Initialize MQTT
     initialize_mqtt(credentials.mqtt_token);
-    
-    // Initialize Commands handler
     commands_handler.reset(new CommandsHandler());
-    
-    Serial.println("MQTT Command Handler started.");
+    Serial.println("[Info] Setup complete, ready to receive commands");
 }
 
 void loop() {
