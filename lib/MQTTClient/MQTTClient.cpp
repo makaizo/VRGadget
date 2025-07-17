@@ -58,7 +58,8 @@ void MQTTClient::subscribe(std::function<void(const std::string&)> callback) {
     notify_callback = callback;
 }
 
-void MQTTClient::reconnect() {
+bool MQTTClient::reconnect() {
+    unsigned int retry_count = 0;
     while (!mqtt_client.connected()) {
         Serial.print("Attempting MQTT connection...");
         
@@ -81,13 +82,19 @@ void MQTTClient::reconnect() {
             Serial.println(" try again in 5 seconds");
             delay(5000);
         }
+        if (retry_count >= 5) {
+            Serial.println("[Error] Maximum MQTT connection retries reached and stops reconnet.");
+            return false;
+        }
+        retry_count++;
     }
+    return true;
 }
 
-void MQTTClient::start() {
+bool MQTTClient::start() {
     if (!WiFi.isConnected()) {
         Serial.println("WiFi not connected. Cannot start MQTT client.");
-        return;
+        return false;
     }
     
     Serial.print("Connecting to MQTT broker at ");
@@ -95,7 +102,14 @@ void MQTTClient::start() {
     Serial.print(":");
     Serial.println(port);
     
-    reconnect();
+    if (reconnect()) {
+        Serial.println("MQTT client connected successfully");
+        return true;
+    } else {
+        Serial.println("MQTT client failed to connect");
+        return false;
+    }
+
 }
 
 void MQTTClient::stop() {
@@ -115,7 +129,11 @@ void MQTTClient::publish(const std::string& topic, const std::string& data) {
 
 void MQTTClient::loop() {
     if (!mqtt_client.connected()) {
-        reconnect();
+        if (reconnect()) {
+            Serial.println("MQTT client reconnected successfully");
+        } else {
+            Serial.println("MQTT client failed to reconnect");
+        }
     }
     mqtt_client.loop();
 }

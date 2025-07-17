@@ -20,14 +20,14 @@ private:
     static void on_message_callback(char* topic, byte* payload, unsigned int length);
     static MQTTClient* instance; // For static callback
     
-    void reconnect();
+    bool reconnect();
 
 public:
     MQTTClient(const std::string& mqtt_token, const std::string& subscribe_topic);
     ~MQTTClient();
     
     void subscribe(std::function<void(const std::string&)> callback);
-    void start();
+    bool start();
     void stop();
     void publish(const std::string& topic, const std::string& data);
     void loop();
