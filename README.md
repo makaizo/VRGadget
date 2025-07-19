@@ -7,7 +7,7 @@ A PlatformIO-based controller designed to receive commands from a VR device over
     - Heating control with a Peltier module (start/finish heating)
     - Cooling control with a Peltier module (start/finish cooling)
     - Splash control with a ultrasonic mist generator module (start/finish splash)
-  - :information: Usage:
+  - :information_source: Usage:
     - You can combine heating/cooling and splash.  
     e.g. if you call heating command and splash command, the gadget will heat and splash at the same time.
     - You cannot use heating and cooling at the same time.  
